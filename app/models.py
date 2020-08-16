@@ -66,6 +66,9 @@ class User(PaginatedAPIMixin, UserMixin, db.Model):
     def __repr__(self):
         return '{}'.format(self.username)
 
+    def set_currency(self, currency):
+        self.currency = Currency.query.filter_by(quote=currency).first().id
+
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
@@ -97,7 +100,6 @@ class User(PaginatedAPIMixin, UserMixin, db.Model):
             'username': self.username,
             'email': self.email,
             'bill': self.bill,
-            'transactions': [],
             'currency': Currency.query.get(self.currency).to_dict(),
             '_links': {
                 'self': url_for('api.get_user', id=self.id),
@@ -111,14 +113,17 @@ class User(PaginatedAPIMixin, UserMixin, db.Model):
                 setattr(self, field, data[field])
         if new_user and 'password' in data:
             self.set_password(data['password'])
+        if 'currency' in data:
+            self.set_currency(data['currency'])
 
 
-class Transaction(db.Model):
+class Transaction(PaginatedAPIMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     sender = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     recipient = db.Column(db.String(120), index=True, nullable=False)
     # храним в базовой валюте
     transfer_amount_base = db.Column(db.Float, nullable=False)
+    # rate к базовой валюте на момент транзакции
     sender_rate = db.Column(db.Float, nullable=False)
 
     def to_dict(self):
@@ -126,6 +131,7 @@ class Transaction(db.Model):
             'id': self.id,
             'sender': User.query.get(self.sender).to_dict(),
             'recipient': self.recipient,
-            'transfer_amount': self.transfer_amount
+            'transfer_amount_base': self.transfer_amount_base,
+            'sender_quote_rate': self.sender_rate
         }
         return data
