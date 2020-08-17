@@ -6,7 +6,7 @@ from app.api.auth import token_auth
 from app.api.errors import bad_request
 
 
-@bp.route('/transaction', methods=['POST'])
+@bp.route('/transactions', methods=['POST'])
 @token_auth.login_required
 def create_transaction():
     data = request.get_json() or {}
