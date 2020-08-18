@@ -22,3 +22,18 @@ def test_get_transactions(test_client):
     assert_that(len(transactions_user['items']), equal_to(1))
     assert_that(transactions_user['items'][0]['sender']['email'], equal_to('test1@gmail.com'))
     assert_that(transactions_user['items'][0]['recipient'], equal_to('test2@gmail.com'))
+
+    credentials = b64encode(b"test2@gmail.com:test2").decode('utf-8')
+    response = test_client.post('/api/tokens', headers={"Authorization": f"Basic {credentials}"})
+    assert_that(response.status_code, equal_to(200))
+
+    data = json.loads(response.data)
+    response = test_client.get('api/users/2', headers={"Authorization": f"Bearer {data['token']}"})
+    assert_that(response.status_code, equal_to(200))
+
+    user = json.loads(response.data)
+    assert_that(user['id'], equal_to(2))
+    assert_that(user['username'], equal_to('test2'))
+    assert_that(user['email'], equal_to('test2@gmail.com'))
+    assert_that(user['currency']['quote'], equal_to('AED'))
+    assert_that(round(user['bill'], 2), equal_to(136.52))
