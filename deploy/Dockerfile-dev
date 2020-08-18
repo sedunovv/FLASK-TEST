@@ -1,0 +1,29 @@
+# Dockerfile
+FROM ubuntu:18.04
+
+ENV PYTHONUNBUFFERED 1
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    python3.8 \
+    python3.8-dev \
+    libssl-dev \
+    python3-pip \
+    python3-setuptools \
+    libpq-dev \
+    postgresql-client
+
+RUN apt-get -y autoremove && apt-get autoclean && apt-get clean
+
+RUN rm -rf /usr/bin/python /usr/bin/python3 /usr/bin/pip && \
+    ln -sfn /usr/bin/python3.8 /usr/bin/python3 && \
+    ln -sfn /usr/bin/python3.8   /usr/bin/python && \
+    ln -sfn /usr/bin/pip3      /usr/bin/pip
+
+RUN mkdir /code
+WORKDIR /code
+ADD requirements.txt /code/
+RUN pip install -r requirements.txt
+ADD . /code/
+RUN chmod +x run_pytest.sh
